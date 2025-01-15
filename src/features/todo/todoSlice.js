@@ -1,18 +1,21 @@
-import {createAsyncThunk, createSlice, isRejectedWithValue} from "@reduxjs/toolkit";
+import {createAsyncThunk, createSlice} from "@reduxjs/toolkit";
 import axios from "axios";
 
 const Url = axios.create({
-  baseURL: "http://localhost:5000",
+  baseURL: "https://67880174c4a42c9161090827.mockapi.io/api",
 });
-export const getTodos = createAsyncThunk("todos/getTodos", async (_, {}) => {
+
+// Async Thunks
+export const getTodos = createAsyncThunk("todos/getTodos", async (_, {rejectWithValue}) => {
   try {
     const {data} = await Url.get("/todos");
     return data;
   } catch (error) {
-    return isRejectedWithValue(error.massage);
+    return rejectWithValue(error.message);
   }
 });
-export const postTodos = createAsyncThunk("todos/postTodos", async (payload, {}) => {
+
+export const postTodos = createAsyncThunk("todos/postTodos", async (payload, {rejectWithValue}) => {
   try {
     const {data} = await Url.post("/todos", {
       title: payload.title,
@@ -21,26 +24,37 @@ export const postTodos = createAsyncThunk("todos/postTodos", async (payload, {})
     });
     return data;
   } catch (error) {
-    return isRejectedWithValue(error.massage);
-  }
-});
-export const deleteTodos = createAsyncThunk("todos/deleteTodos ", async (payload, {}) => {
-  try {
-    await Url.delete(`/todos/${payload.id}`);
-    return {id: payload.id};
-  } catch (error) {
-    return isRejectedWithValue(error.massage);
-  }
-});
-export const updateTodos = createAsyncThunk("todos/updateTodos ", async (payload, {}) => {
-  try {
-    const {data} = await Url.patch(`/todos/${payload.id}`);
-    return data;
-  } catch (error) {
-    return isRejectedWithValue(error.massage);
+    return rejectWithValue(error.message);
   }
 });
 
+export const deleteTodos = createAsyncThunk(
+  "todos/deleteTodos",
+  async (payload, {rejectWithValue}) => {
+    try {
+      await Url.delete(`/todos/${payload.id}`);
+      return {id: payload.id};
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
+export const updateTodos = createAsyncThunk(
+  "todos/updateTodos",
+  async (payload, {rejectWithValue}) => {
+    try {
+      const {data} = await Url.put(`/todos/${payload.id}`, {
+        completed: payload.completed,
+      });
+      return {id: payload.id, completed: data.completed};
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
+// Slice
 const todosSlice = createSlice({
   name: "todos",
   initialState: {
@@ -59,14 +73,17 @@ const todosSlice = createSlice({
     },
     toggleTodo: (state, action) => {
       const selectedTodo = state.todos.find((t) => t.id === action.payload.id);
-      selectedTodo.completed = !selectedTodo.completed;
+      if (selectedTodo) {
+        selectedTodo.completed = !selectedTodo.completed;
+      }
     },
     removeTodo: (state, action) => {
       state.todos = state.todos.filter((t) => t.id !== action.payload.id);
     },
   },
   extraReducers: {
-    [getTodos.pending]: (state, action) => {
+    // getTodos
+    [getTodos.pending]: (state) => {
       state.loading = true;
       state.todos = [];
       state.error = "";
@@ -81,26 +98,53 @@ const todosSlice = createSlice({
       state.todos = [];
       state.error = action.payload;
     },
-    [postTodos.pending]: (state, action) => {
+
+    // postTodos
+    [postTodos.pending]: (state) => {
       state.loading = true;
     },
     [postTodos.fulfilled]: (state, action) => {
       state.loading = false;
       state.todos.push(action.payload);
     },
-    [deleteTodos.pending]: (state, action) => {
+    [postTodos.rejected]: (state, action) => {
+      state.loading = false;
+      state.error = action.payload;
+    },
+
+    // deleteTodos
+    [deleteTodos.pending]: (state) => {
       state.loading = true;
     },
     [deleteTodos.fulfilled]: (state, action) => {
       state.loading = false;
       state.todos = state.todos.filter((t) => t.id !== action.payload.id);
     },
+    [deleteTodos.rejected]: (state, action) => {
+      state.loading = false;
+      state.error = action.payload;
+    },
+
+    // updateTodos
+    [updateTodos.pending]: (state) => {
+      state.loading = true;
+    },
     [updateTodos.fulfilled]: (state, action) => {
+      state.loading = false;
       const selectedTodo = state.todos.find((t) => t.id === action.payload.id);
-      selectedTodo.completed = !selectedTodo.completed;
+      if (selectedTodo) {
+        selectedTodo.completed = action.payload.completed;
+      }
+    },
+    [updateTodos.rejected]: (state, action) => {
+      state.loading = false;
+      state.error = action.payload;
     },
   },
 });
 
+// Export Actions
 export const {addTodo, removeTodo, toggleTodo} = todosSlice.actions;
+
+// Export Reducer
 export default todosSlice.reducer;
