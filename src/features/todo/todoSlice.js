@@ -6,7 +6,7 @@ const Url = axios.create({
 });
 
 // Async Thunks
-export const getTodos = createAsyncThunk("todos/getTodos", async (_, {rejectWithValue}) => {
+export const getTodos = createAsyncThunk("todos/getTodos", async (payload, {rejectWithValue}) => {
   try {
     const {data} = await Url.get("/todos");
     return data;
@@ -32,8 +32,9 @@ export const deleteTodos = createAsyncThunk(
   "todos/deleteTodos",
   async (payload, {rejectWithValue}) => {
     try {
-      await Url.delete(`/todos/${payload.id}`);
-      return {id: payload.id};
+      const { data } = await Url.delete(`/todos/${payload.id}`);
+      console.log(data)
+      return data;
     } catch (error) {
       return rejectWithValue(error.message);
     }
@@ -62,25 +63,25 @@ const todosSlice = createSlice({
     loading: false,
     error: "",
   },
-  reducers: {
-    addTodo: (state, action) => {
-      const newTodo = {
-        id: Date.now(),
-        title: action.payload.title,
-        completed: false,
-      };
-      state.todos.push(newTodo);
-    },
-    toggleTodo: (state, action) => {
-      const selectedTodo = state.todos.find((t) => t.id === action.payload.id);
-      if (selectedTodo) {
-        selectedTodo.completed = !selectedTodo.completed;
-      }
-    },
-    removeTodo: (state, action) => {
-      state.todos = state.todos.filter((t) => t.id !== action.payload.id);
-    },
-  },
+  // reducers: {
+  //   addTodo: (state, action) => {
+  //     const newTodo = {
+  //       id: Date.now(),
+  //       title: action.payload.title,
+  //       completed: false,
+  //     };
+  //     state.todos.push(newTodo);
+  //   },
+  //   toggleTodo: (state, action) => {
+  //     const selectedTodo = state.todos.find((t) => t.id === action.payload.id);
+  //     if (selectedTodo) {
+  //       selectedTodo.completed = !selectedTodo.completed;
+  //     }
+  //   },
+  //   removeTodo: (state, action) => {
+  //     state.todos = state.todos.filter((t) => t.id !== action.payload.id);
+  //   },
+  // },
   extraReducers: {
     // getTodos
     [getTodos.pending]: (state) => {
@@ -143,8 +144,7 @@ const todosSlice = createSlice({
   },
 });
 
-// Export Actions
-export const {addTodo, removeTodo, toggleTodo} = todosSlice.actions;
+
 
 // Export Reducer
 export default todosSlice.reducer;

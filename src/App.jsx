@@ -5,8 +5,7 @@ import { Provider, useSelector } from "react-redux";
 import store from "./features/store";
 
 function App() {
-  const {todos} = useSelector((state) => state.todos)
-  console.log(todos)
+
   return (
     <Provider store={store}>
 
