@@ -1,4 +1,4 @@
-import {useState} from "react";
+import {useRef, useState} from "react";
 import {useDispatch, useSelector} from "react-redux";
 import {postTodos} from "../../features/todo/todoSlice";
 
@@ -6,11 +6,14 @@ const AddTodoForm = () => {
   const [value, setValue] = useState("");
   const {loading } = useSelector((state) => state.todos);
   const dispatch = useDispatch();
+  const ref = useRef()
   const handelsubmit = (e) => {
     e.preventDefault();
     if (!value) return;
     dispatch(postTodos({title: value}));
     setValue("");
+    ref.current.focus()
+
   };
 
   return (
@@ -28,6 +31,7 @@ const AddTodoForm = () => {
         className="form-control mb-2 mr-sm-2"
         placeholder="Add todo..."
         value={value}
+        ref={ref}
         onChange={(event) => setValue(event.target.value)}
       />
       <button disabled={loading} type="submit" className="btn btn-primary mt-1">

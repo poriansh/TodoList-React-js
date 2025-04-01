@@ -32,8 +32,7 @@ export const deleteTodos = createAsyncThunk(
   "todos/deleteTodos",
   async (payload, {rejectWithValue}) => {
     try {
-      const { data } = await Url.delete(`/todos/${payload.id}`);
-      console.log(data)
+      const {data} = await Url.delete(`/todos/${payload.id}`);
       return data;
     } catch (error) {
       return rejectWithValue(error.message);
@@ -48,7 +47,7 @@ export const updateTodos = createAsyncThunk(
       const {data} = await Url.put(`/todos/${payload.id}`, {
         completed: payload.completed,
       });
-      return {id: payload.id, completed: data.completed};
+      return data;
     } catch (error) {
       return rejectWithValue(error.message);
     }
@@ -112,10 +111,9 @@ const todosSlice = createSlice({
       state.loading = false;
       state.error = action.payload;
     },
-
     // deleteTodos
     [deleteTodos.pending]: (state) => {
-      state.loading = true;
+      state.loading = false;
     },
     [deleteTodos.fulfilled]: (state, action) => {
       state.loading = false;
@@ -125,17 +123,17 @@ const todosSlice = createSlice({
       state.loading = false;
       state.error = action.payload;
     },
-
     // updateTodos
     [updateTodos.pending]: (state) => {
-      state.loading = true;
+      state.loading = false;
     },
     [updateTodos.fulfilled]: (state, action) => {
       state.loading = false;
-      const selectedTodo = state.todos.find((t) => t.id === action.payload.id);
-      if (selectedTodo) {
-        selectedTodo.completed = action.payload.completed;
-      }
+      state.todos = state.todos.map((todo) =>
+        todo.id === action.payload.id
+          ? {...todo, completed: action.payload.completed} // مقدار جدید را جایگزین می‌کنیم
+          : todo
+      );
     },
     [updateTodos.rejected]: (state, action) => {
       state.loading = false;
@@ -143,8 +141,6 @@ const todosSlice = createSlice({
     },
   },
 });
-
-
 
 // Export Reducer
 export default todosSlice.reducer;
